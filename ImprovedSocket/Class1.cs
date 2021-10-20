@@ -30,6 +30,7 @@ namespace Improved
         private ProgramStruct p_struct;
         private bool bind_flag;
         private Thread TcpListenThread;
+        private Thread TcpMessageListenThread;
 
         public delegate void MessageHadnler(byte[] message);
         public event MessageHadnler newMessage;
@@ -122,10 +123,7 @@ namespace Improved
         {
             if (p_struct == ProgramStruct.Client)
             {
-                if (Protocol_Type == PType.TCP)
-                {
-                    self.Connect(endPoint);
-                }
+                if (Protocol_Type == PType.TCP) self.Connect(endPoint);
                 else throw new Exception("Данный метод не предназначен для UDP");
             }
             else new Exception("Данный метод не предназначен для Сервера");
@@ -158,12 +156,19 @@ namespace Improved
 
         public int Send(string message) => Send(message.GetBytes());
 
-        public int Receive()
+        public void Receive()
         {
-            byte[] data = new byte[1024];
-            self.Receive(data);
-            newMessage?.Invoke(data);
-            return 0;
+            TcpMessageListenThread = new Thread(() =>
+            {
+                while (true)
+                {
+                    byte[] data = new byte[1024];
+                    self.Receive(data);
+                    newMessage?.Invoke(data);
+                }
+            }
+            );
+            TcpMessageListenThread.Start();
         }
 
         public int SendTo(EndPoint endPoint, byte[] message)
