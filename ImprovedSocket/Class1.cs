@@ -84,27 +84,25 @@ namespace Improved
 
         public void Bind(EndPoint endPoint)
         {
-            Console.WriteLine(p_struct);
             if (p_struct == ProgramStruct.Server)
             {
                 End_Point = endPoint;
+                self.Bind(End_Point);
                 bind_flag = true;
             }
             else throw new Exception("Данный метод не предназначен для Клиента");
-            Console.WriteLine(bind_flag);
         }
 
         public void Start()
         {
-            Console.WriteLine(bind_flag);
             if (p_struct == ProgramStruct.Client) throw new Exception("Клиент не может быть запущен для прослушивания");
             if (bind_flag)
             {
-                if (p_struct == ProgramStruct.Server && Protocol_Type == PType.TCP)
+                if (p_struct == ProgramStruct.Server & Protocol_Type == PType.TCP)
                 {
                     self.Listen(Listen_Count);
-                    //TcpListenThread = new Thread(TcpListen);
-                    //TcpListenThread.Start();
+                    TcpListenThread = new Thread(TcpListen);
+                    TcpListenThread.Start();
                 }
                 else throw new Exception("Нельзя прослушивать подключения для UDP-сокета");
             }
@@ -116,7 +114,7 @@ namespace Improved
             while (true)
             {
                 Socket client = self.Accept();
-                newConnect(new ImprovedSocket(client, ProgramStruct.Client));
+                newConnect?.Invoke(new ImprovedSocket(client, ProgramStruct.Client));
             }
         }
 
@@ -148,9 +146,8 @@ namespace Improved
 
             //Первый байт сжатая длина сообщения
             //Второй байт кол-во сжатий длины сообщения
-            result[0] = (byte)messageZipLength;
-            result[1] = (byte)count;
-
+            result.AddBegin((byte)messageZipLength);
+            result.AddBegin((byte)count);
             return result.Add(message);
         }
 
@@ -163,7 +160,9 @@ namespace Improved
 
         public int Receive()
         {
-            Receive();
+            byte[] data = new byte[1024];
+            self.Receive(data);
+            newMessage?.Invoke(data);
             return 0;
         }
 
