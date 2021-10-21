@@ -97,6 +97,7 @@ namespace Improved
         public void Start()
         {
             if (p_struct == ProgramStruct.Client) throw new Exception("Клиент не может быть запущен для прослушивания");
+
             if (bind_flag)
             {
                 if (p_struct == ProgramStruct.Server & Protocol_Type == PType.TCP)
@@ -144,8 +145,8 @@ namespace Improved
 
             //Первый байт сжатая длина сообщения
             //Второй байт кол-во сжатий длины сообщения
-            result.AddBegin((byte)messageZipLength);
-            result.AddBegin((byte)count);
+            result[0] = (byte)messageZipLength;
+            result[1] = (byte)count;
             return result.Add(message);
         }
 
